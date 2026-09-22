@@ -1,0 +1,75 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+eggs/
+*.whl
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# === dbt ===
+dbt/my_project/target/
+dbt/my_project/dbt_packages/
+dbt/my_project/dbt_modules/
+dbt/my_project/logs/
+dbt/my_project/.user.yml
+dbt/profiles.yml
+dbt/.user.yml
+
+# === Docker ===
+docker-compose.override.yaml
+docker-compose.override.yml
+
+# === Environment & Secrets ===
+.env
+.env.*
+!.env.example
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# === OS ===
+Thumbs.db
+Desktop.ini
+.DS_Store
+._*
+
+# === Data & Logs (large/local files) ===
+*.log
+data/
+logs/
+output/
+
+# === Jupyter ===
+.ipynb_checkpoints/
+
+# === Coverage & Testing ===
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+
+# === Misc ===
+*.bak
+*.tmp
+*.cache
