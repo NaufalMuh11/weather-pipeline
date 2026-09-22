@@ -35,7 +35,9 @@ services:
       AIRFLOW__CORE__DAG_FILE_REFRESH_INTERVAL: 60
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      HOST_PROJECT_PATH: E:/Work/Project/Data_Project/weather-data-engineer
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      HOST_PROJECT_PATH: ${HOST_PROJECT_PATH:-.}
     mem_limit: 3g
     cpus: 2
     volumes:
@@ -53,6 +55,9 @@ services:
   dbt:
     container_name: dbt_container
     image: ghcr.io/dbt-labs/dbt-postgres:1.9.latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - ./dbt/my_project:/usr/app
       - ./dbt:/root/.dbt
