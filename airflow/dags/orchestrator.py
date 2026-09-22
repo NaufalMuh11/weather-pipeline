@@ -55,6 +55,11 @@ with DAG(
         network_mode='weather-data-engineer_my-network',
         docker_url='unix://var/run/docker.sock',
         auto_remove='success',
+        mount_tmp_dir=False,
+        environment={
+            'POSTGRES_USER': os.getenv('POSTGRES_USER', 'user_d'),
+            'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin123'),
+        },
     )
 
     task1 >> task2
