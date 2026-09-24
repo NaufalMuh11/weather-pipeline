@@ -9,7 +9,10 @@ with source as (
 
 de_dup as (
     select *,
-    row_number() over (partition by id order by inserted_at desc) as rn
+        row_number() over (
+            partition by city, observed_at 
+            order by inserted_at desc
+        ) as rn
     from source
 )
 
@@ -30,7 +33,7 @@ select
     wind_deg,
     clouds,
     visibility,
-    observed_at as weather_time_local,
-    (inserted_at at time zone 'UTC' at time zone 'Asia/Jakarta') as inserted_at_local
+    (observed_at at time zone 'Asia/Jakarta') as weather_time_local,
+    (inserted_at at time zone 'Asia/Jakarta') as inserted_at_local
 from de_dup
 where rn = 1
