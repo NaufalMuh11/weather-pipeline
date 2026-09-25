@@ -23,7 +23,7 @@ This project automatically fetches current weather data from the **OpenWeatherMa
 | Category | Technology |
 |----------|------------|
 | Language | Python |
-| Database | PostgreSQL 14 |
+| Database | PostgreSQL  |
 | Data Transformation | dbt 1.9 |
 | Orchestration | Apache Airflow 3.0 |
 | Visualization | Apache Superset 3.0 |
