@@ -114,9 +114,10 @@ daily_average  weather_report
 
 ## Apache Superset
 
-The final reporting layer is consumed by Apache Superset to build interactive dashboards for weather analytics.
+Visualization reporting layer is consumed by Apache Superset.
 
-Default credentials: `admin` / `admin`
+![Superset Dashboard](images/Superset_Dashboard.png)
+
 
 ---
 
