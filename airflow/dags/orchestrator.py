@@ -7,7 +7,8 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from docker.types import Mount
 
-HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", "E:/Work/Project/Data_Project/weather-data-engineer")
+HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", ".")
+DOCKER_NETWORK = os.getenv("DOCKER_NETWORK", "weather-data-engineer_my-network")
 
 
 def _ingest_data(**_kwargs):
@@ -52,7 +53,7 @@ with DAG(
                 type='bind',
             ),
         ],
-        network_mode='weather-data-engineer_my-network',
+        network_mode=DOCKER_NETWORK,
         docker_url='unix://var/run/docker.sock',
         auto_remove='success',
         mount_tmp_dir=False,
