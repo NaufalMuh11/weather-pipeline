@@ -26,6 +26,7 @@ dbt/my_project/logs/
 dbt/my_project/.user.yml
 dbt/profiles.yml
 dbt/.user.yml
+!dbt/profiles.yml.example
 
 # === Docker ===
 docker-compose.override.yaml
@@ -35,6 +36,7 @@ docker-compose.override.yml
 .env
 .env.*
 !.env.example
+!docker/.env
 
 # === IDE ===
 .vscode/
@@ -56,6 +58,9 @@ Desktop.ini
 data/
 logs/
 output/
+
+# === PostgreSQL data (never commit DB files) ===
+postgres/data/
 
 # === Jupyter ===
 .ipynb_checkpoints/
