@@ -9,7 +9,7 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from docker.types import Mount
 
-HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", str(pathlib.Path(__file__).resolve().parents[2]))
+HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", "/opt/airflow/project")
 DOCKER_NETWORK = os.getenv("DOCKER_NETWORK", "weather-data-engineer_my-network")
 
 
