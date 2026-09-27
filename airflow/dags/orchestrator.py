@@ -1,5 +1,7 @@
 import os
+import pathlib
 import sys
+import logging
 from datetime import datetime, timedelta
 
 from airflow import DAG
@@ -7,21 +9,42 @@ from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from docker.types import Mount
 
-HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", ".")
+HOST_PROJECT_PATH = os.getenv("HOST_PROJECT_PATH", str(pathlib.Path(__file__).resolve().parents[2]))
 DOCKER_NETWORK = os.getenv("DOCKER_NETWORK", "weather-data-engineer_my-network")
+
+
+def _validate_mount_paths() -> None:
+    """Fail fast if required dbt files are missing."""
+    dbt_project = pathlib.Path(HOST_PROJECT_PATH) / "dbt" / "my_project"
+    profiles = pathlib.Path(HOST_PROJECT_PATH) / "dbt" / "profiles.yml"
+    if not dbt_project.is_dir():
+        raise FileNotFoundError(f"dbt project not found: {dbt_project}")
+    if not profiles.is_file():
+        raise FileNotFoundError(f"profiles.yml not found: {profiles}")
+
+
+_validate_mount_paths()
 
 
 def _ingest_data(**_kwargs):
     """Import insert_records only at task runtime, not at DAG parse time."""
-    sys.path.insert(0, '/opt/airflow/api-request')
-    from insert_records import main
-    main()
+    logger = logging.getLogger('airflow.task')
+    try:
+        sys.path.insert(0, '/opt/airflow/api-request')
+        from insert_records import main
+        main()
+    except Exception as e:
+        logger.error('Data ingestion failed: %s', e)
+        raise
 
 
 default_args = {
     'description': 'A DAG to orchestrate weather data ingestion and dbt transformation.',
     'start_date': datetime(2026, 9, 19),
     'catchup': False,
+    'retries': 2,
+    'retry_delay': timedelta(minutes=5),
+    'execution_timeout': timedelta(minutes=10),
 }
 
 with DAG(
@@ -58,8 +81,8 @@ with DAG(
         auto_remove='success',
         mount_tmp_dir=False,
         environment={
-            'POSTGRES_USER': os.getenv('POSTGRES_USER', 'user_d'),
-            'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin123'),
+            'POSTGRES_USER': os.getenv('POSTGRES_USER'),
+            'POSTGRES_PASSWORD': os.getenv('POSTGRES_PASSWORD'),
         },
     )
 
