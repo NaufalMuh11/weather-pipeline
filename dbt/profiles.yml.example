@@ -6,7 +6,7 @@ my_project:
       host: database
       port: 5432
       user: "{{ env_var('POSTGRES_USER') }}"
-      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
       dbname: weather_db
       schema: dev
       threads: 4
