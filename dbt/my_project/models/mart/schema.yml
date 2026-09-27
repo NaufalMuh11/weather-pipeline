@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: daily_average
+    description: Daily aggregated weather metrics per city
+    columns:
+      - name: city
+        description: City name
+        tests:
+          - not_null
+      - name: date_local
+        description: Date in Asia/Jakarta timezone
+        tests:
+          - not_null
+      - name: total_observations
+        description: Number of observations per day
+      - name: avg_temperature
+        description: Average temperature in Celsius
+        tests:
+          - not_null
+
+  - name: weather_report
+    description: Clean, report-ready dataset optimized for dashboard consumption
+    columns:
+      - name: id
+        description: Primary key
+        tests:
+          - not_null
+          - unique
+      - name: city
+        description: City name
+        tests:
+          - not_null
