@@ -2,22 +2,34 @@ version: 2
 
 models:
   - name: stg_weather_data
-    description: Deduplicated weather data with timezone normalization to Asia/Jakarta
+    description: Deduplicated weather data joined with city dimension, timezone normalized to Asia/Jakarta
     columns:
       - name: id
-        description: Primary key from raw data
+        description: Primary key from raw.weather_data
         tests:
           - not_null
           - unique
-      - name: city
-        description: City name
+      - name: city_id
+        description: Foreign key to raw.city
         tests:
           - not_null
-      - name: weather_time_local
+      - name: city_name
+        description: City name from dimension table
+        tests:
+          - not_null
+      - name: observed_local
         description: Observation time converted to Asia/Jakarta timezone
         tests:
           - not_null
-      - name: temperature
+      - name: temperature_c
         description: Temperature in Celsius
+        tests:
+          - not_null
+      - name: humidity
+        description: Humidity percentage (0-100)
+        tests:
+          - not_null
+      - name: pressure_hpa
+        description: Atmospheric pressure in hPa
         tests:
           - not_null

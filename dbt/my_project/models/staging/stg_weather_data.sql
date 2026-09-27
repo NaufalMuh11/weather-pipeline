@@ -3,14 +3,22 @@
 ) }}
 
 with source as (
-    select *
-    from {{ source('dev', 'raw_weather_data') }}
+    select
+        w.*,
+        c.city_name,
+        c.latitude,
+        c.longitude,
+        c.country,
+        c.timezone
+    from {{ source('raw', 'weather_data') }} w
+    join {{ source('raw', 'city') }} c
+        on w.city_id = c.city_id
 ),
 
 de_dup as (
     select *,
         row_number() over (
-            partition by city, observed_at 
+            partition by city_name, observed_at
             order by inserted_at desc
         ) as rn
     from source
@@ -18,22 +26,25 @@ de_dup as (
 
 select
     id,
-    city,
-    lat,
-    lon,
-    temperature,
-    feels_like,
-    temp_min,
-    temp_max,
+    city_id,
+    city_name,
+    latitude,
+    longitude,
+    country,
+    timezone,
+    temperature_c,
+    feels_like_c,
+    temp_min_c,
+    temp_max_c,
     humidity,
-    pressure,
+    pressure_hpa,
     weather_main,
-    weather_description,
-    wind_speed,
+    weather_desc,
+    wind_speed_ms,
     wind_deg,
-    clouds,
-    visibility,
-    (observed_at at time zone 'Asia/Jakarta') as weather_time_local,
-    (inserted_at at time zone 'Asia/Jakarta') as inserted_at_local
+    cloud_pct,
+    visibility_m,
+    (observed_at at time zone 'Asia/Jakarta') as observed_local,
+    (inserted_at at time zone 'Asia/Jakarta') as loaded_at
 from de_dup
 where rn = 1

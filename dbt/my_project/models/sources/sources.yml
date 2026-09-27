@@ -1,35 +1,54 @@
 version: 2
 
 sources:
-  - name: dev
+  - name: raw
     database: weather_db
+    schema: raw
     tables:
-    - name: raw_weather_data
-      columns:
-        - name: id
-          tests:
-            - not_null
-            - unique
-        - name: city
-          tests:
-            - not_null
-        - name: lat
-        - name: lon
-        - name: temperature
-          tests:
-            - not_null
-        - name: feels_like
-        - name: temp_min
-        - name: temp_max
-        - name: humidity
-        - name: pressure
-        - name: weather_main
-        - name: weather_description
-        - name: wind_speed
-        - name: wind_deg
-        - name: clouds
-        - name: visibility
-        - name: observed_at
-          tests:
-            - not_null
-        - name: inserted_at
+      - name: city
+        columns:
+          - name: city_id
+            tests:
+              - not_null
+              - unique
+          - name: city_name
+            tests:
+              - not_null
+              - unique
+          - name: latitude
+          - name: longitude
+          - name: country
+          - name: timezone
+
+      - name: weather_data
+        columns:
+          - name: id
+            tests:
+              - not_null
+              - unique
+          - name: city_id
+            tests:
+              - not_null
+          - name: temperature_c
+            tests:
+              - not_null
+          - name: feels_like_c
+          - name: temp_min_c
+          - name: temp_max_c
+          - name: humidity
+            tests:
+              - not_null
+          - name: pressure_hpa
+            tests:
+              - not_null
+          - name: weather_main
+          - name: weather_desc
+          - name: wind_speed_ms
+          - name: wind_deg
+          - name: cloud_pct
+          - name: visibility_m
+          - name: observed_at
+            tests:
+              - not_null
+          - name: inserted_at
+          - name: etl_batch_id
