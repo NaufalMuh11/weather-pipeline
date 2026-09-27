@@ -1,11 +1,16 @@
 import os
-import psycopg2
+import logging
 from datetime import datetime, timezone
+
+import psycopg2
+
 from api_request import INDONESIA_CITIES, fetch_data
+
+logger = logging.getLogger(__name__)
 
 
 def connect_to_db():
-    print("Connecting to the PostgreSQL database...")
+    logger.info("Connecting to the PostgreSQL database...")
     try:
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST", "database"),
@@ -16,49 +21,28 @@ def connect_to_db():
         )
         return conn
     except psycopg2.Error as e:
-        print(f"Error connecting to the database: {e}")
+        logger.error("Error connecting to the database: %s", e)
         raise
 
 
-def create_table(conn):
-    print("Creating table if not exists...")
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                CREATE SCHEMA IF NOT EXISTS dev;
-                CREATE TABLE IF NOT EXISTS dev.raw_weather_data (
-                    id SERIAL PRIMARY KEY,
-                    city TEXT,
-                    lat FLOAT,
-                    lon FLOAT,
-                    temperature FLOAT,
-                    feels_like FLOAT,
-                    temp_min FLOAT,
-                    temp_max FLOAT,
-                    humidity INT,
-                    pressure INT,
-                    weather_main TEXT,
-                    weather_description TEXT,
-                    wind_speed FLOAT,
-                    wind_deg INT,
-                    clouds INT,
-                    visibility INT,
-                    observed_at TIMESTAMPTZ,
-                    inserted_at TIMESTAMPTZ DEFAULT NOW()
-                );
-            """)
-        conn.commit()
-        print("Table created successfully.")
-    except psycopg2.Error as e:
-        print(f"Error creating table: {e}")
-        raise
+def get_city_id(conn, city_name: str) -> int:
+    """Look up city_id from raw.city dimension table."""
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT city_id FROM raw.city WHERE city_name = %s",
+            (city_name,)
+        )
+        row = cursor.fetchone()
+        if row is None:
+            raise ValueError(f"City not found in raw.city: {city_name}")
+        return row[0]
 
 
-def kelvin_to_celsius(k):
+REQUIRED_API_KEYS = ('main', 'weather', 'wind', 'coord', 'dt', 'clouds')
+
+
+def kelvin_to_celsius(k: float) -> float:
     return round(k - 273.15, 2)
-
-
-REQUIRED_API_KEYS = ['main', 'weather', 'wind', 'coord', 'dt', 'clouds']
 
 
 def validate_weather_data(data: dict) -> None:
@@ -79,70 +63,67 @@ def validate_weather_data(data: dict) -> None:
         raise ValueError(f'Invalid pressure: {data["main"]["pressure"]}')
 
 
-def insert_records(conn, city_name: str, data: dict) -> None:
-    print(f"Inserting record for {city_name}...")
-    try:
-        main = data['main']
-        weather = data['weather'][0]
-        wind = data['wind']
-        coord = data['coord']
+def insert_records(conn, city_id: int, city_name: str, data: dict) -> None:
+    """Insert a single weather observation into raw.weather_data."""
+    logger.info("Inserting record for %s...", city_name)
+    main = data['main']
+    weather = data['weather'][0]
+    wind = data['wind']
 
-        observed_at = datetime.fromtimestamp(data['dt'], tz=timezone.utc)
+    observed_at = datetime.fromtimestamp(data['dt'], tz=timezone.utc)
 
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                INSERT INTO dev.raw_weather_data(
-                    city, lat, lon,
-                    temperature, feels_like, temp_min, temp_max,
-                    humidity, pressure,
-                    weather_main, weather_description,
-                    wind_speed, wind_deg,
-                    clouds, visibility,
-                    observed_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                city_name,
-                coord['lat'],
-                coord['lon'],
-                kelvin_to_celsius(main['temp']),
-                kelvin_to_celsius(main['feels_like']),
-                kelvin_to_celsius(main['temp_min']),
-                kelvin_to_celsius(main['temp_max']),
-                main['humidity'],
-                main['pressure'],
-                weather['main'],
-                weather['description'],
-                wind['speed'],
-                wind.get('deg'),
-                data['clouds']['all'],
-                data.get('visibility'),
-                observed_at,
-            ))
-        conn.commit()
-        print(f"Record for {city_name} inserted successfully.")
-    except psycopg2.Error as e:
-        print(f"Error inserting records: {e}")
-        raise
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            INSERT INTO raw.weather_data(
+                city_id,
+                temperature_c, feels_like_c, temp_min_c, temp_max_c,
+                humidity, pressure_hpa,
+                weather_main, weather_desc,
+                wind_speed_ms, wind_deg,
+                cloud_pct, visibility_m,
+                observed_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (city_id, observed_at) DO NOTHING
+        """, (
+            city_id,
+            kelvin_to_celsius(main['temp']),
+            kelvin_to_celsius(main['feels_like']),
+            kelvin_to_celsius(main['temp_min']),
+            kelvin_to_celsius(main['temp_max']),
+            main['humidity'],
+            main['pressure'],
+            weather['main'],
+            weather['description'],
+            wind['speed'],
+            wind.get('deg'),
+            data['clouds']['all'],
+            data.get('visibility'),
+            observed_at,
+        ))
+    conn.commit()
+    logger.info("Record for %s inserted successfully.", city_name)
 
 
-def main():
+def main() -> None:
     conn = None
     try:
         conn = connect_to_db()
-        create_table(conn)
 
         for city in INDONESIA_CITIES:
+            city_id = get_city_id(conn, city["name"])
             data = fetch_data(city)
             validate_weather_data(data)
-            insert_records(conn, city["name"], data)
+            insert_records(conn, city_id, city["name"], data)
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error("An error occurred: %s", e)
+        raise
     finally:
         if conn:
             conn.close()
-            print("Database connection closed.")
+            logger.info("Database connection closed.")
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     main()
