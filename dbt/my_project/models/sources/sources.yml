@@ -7,10 +7,17 @@ sources:
     - name: raw_weather_data
       columns:
         - name: id
+          tests:
+            - not_null
+            - unique
         - name: city
+          tests:
+            - not_null
         - name: lat
         - name: lon
         - name: temperature
+          tests:
+            - not_null
         - name: feels_like
         - name: temp_min
         - name: temp_max
@@ -23,4 +30,6 @@ sources:
         - name: clouds
         - name: visibility
         - name: observed_at
+          tests:
+            - not_null
         - name: inserted_at
