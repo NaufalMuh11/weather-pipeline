@@ -58,6 +58,27 @@ def kelvin_to_celsius(k):
     return round(k - 273.15, 2)
 
 
+REQUIRED_API_KEYS = ['main', 'weather', 'wind', 'coord', 'dt', 'clouds']
+
+
+def validate_weather_data(data: dict) -> None:
+    """Validate API response structure and value ranges."""
+    for key in REQUIRED_API_KEYS:
+        if key not in data:
+            raise ValueError(f'Missing required key: {key}')
+
+    temp_celsius = data['main']['temp'] - 273.15
+    if not (-50 <= temp_celsius <= 60):
+        raise ValueError(f'Temperature out of range: {temp_celsius:.1f}C')
+
+    humidity = data['main']['humidity']
+    if not (0 <= humidity <= 100):
+        raise ValueError(f'Humidity out of range: {humidity}%')
+
+    if data['main']['pressure'] <= 0:
+        raise ValueError(f'Invalid pressure: {data["main"]["pressure"]}')
+
+
 def insert_records(conn, city_name: str, data: dict) -> None:
     print(f"Inserting record for {city_name}...")
     try:
@@ -112,6 +133,7 @@ def main():
 
         for city in INDONESIA_CITIES:
             data = fetch_data(city)
+            validate_weather_data(data)
             insert_records(conn, city["name"], data)
 
     except Exception as e:
